@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 env:
-  IMAGE_NAME: linstant_gourmand
+  IMAGE_NAME: linstant-gourmand
   REGISTRY: ghcr.io
 
 jobs:
