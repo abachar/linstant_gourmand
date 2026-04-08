@@ -20,6 +20,21 @@ export const sales = pgTable(
 	(t) => [index("idx_sales_delivery_datetime").on(t.deliveryDatetime)],
 );
 
+export const saleItems = pgTable(
+	"sale_items",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		saleId: uuid("sale_id")
+			.notNull()
+			.references(() => sales.id, { onDelete: "cascade" }),
+		description: text("description").notNull(),
+		unitPrice: numeric("unit_price", { precision: 10, scale: 2 }).notNull(),
+		quantity: integer("quantity").notNull(),
+		sortOrder: integer("sort_order").notNull().default(0),
+	},
+	(t) => [index("idx_sale_items_sale_id").on(t.saleId)],
+);
+
 export const purchases = pgTable(
 	"purchases",
 	{

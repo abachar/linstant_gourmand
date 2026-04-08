@@ -22,6 +22,15 @@ export const SaleEditPage = ({ sale }: { sale: FindSaleByIdReturn }) => {
 		depositPaymentMethod: sale.depositPaymentMethod,
 		remaining: sale.remaining,
 		remainingPaymentMethod: sale.remainingPaymentMethod,
+		items:
+			sale.items?.length > 0
+				? sale.items.map((item, i) => ({
+						key: String(i),
+						description: item.description,
+						unitPrice: item.unitPrice,
+						quantity: String(item.quantity),
+					}))
+				: [{ key: "0", description: "", unitPrice: "", quantity: "1" }],
 	};
 
 	async function handleSubmit(values: SaleFormValues) {
@@ -32,6 +41,13 @@ export const SaleEditPage = ({ sale }: { sale: FindSaleByIdReturn }) => {
 				...values,
 				deliveryAddress: values.deliveryAddress || undefined,
 				description: values.description || undefined,
+				items: values.items
+					.filter((item) => item.description && item.unitPrice)
+					.map((item) => ({
+						description: item.description,
+						unitPrice: item.unitPrice,
+						quantity: Number.parseInt(item.quantity, 10) || 1,
+					})),
 			});
 			router.push(`/sales/${sale.id}`);
 		} finally {

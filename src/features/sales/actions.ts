@@ -65,6 +65,7 @@ export async function createSaleAction(data: {
 	depositPaymentMethod: string;
 	remaining: string;
 	remainingPaymentMethod: string;
+	items?: { description: string; unitPrice: string; quantity: number }[];
 }) {
 	return createSale(data);
 }
@@ -84,6 +85,7 @@ export async function updateSaleAction(data: {
 	depositPaymentMethod: string;
 	remaining: string;
 	remainingPaymentMethod: string;
+	items?: { description: string; unitPrice: string; quantity: number }[];
 }) {
 	return updateSale(data);
 }

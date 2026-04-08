@@ -32,6 +32,36 @@ export const SaleDetails = ({ sale }: { sale: FindSaleByIdReturn }) => {
 				)}
 			</div>
 
+			{/* Articles */}
+			{sale.items?.length > 0 && (
+				<div className="p-4 rounded-xl bg-white dark:bg-surface-dark shadow-sm border border-slate-100 dark:border-white/5">
+					<h4 className="text-slate-400 dark:text-white/40 text-[11px] font-bold uppercase tracking-widest mb-3">
+						Articles
+					</h4>
+					<div className="space-y-2">
+						{sale.items.map((item) => {
+							const lineTotal = Number.parseFloat(item.unitPrice) * item.quantity;
+							return (
+								<div
+									key={item.id}
+									className="flex justify-between items-start py-2 border-b border-slate-100 dark:border-white/5 last:border-0"
+								>
+									<div className="flex-1">
+										<p className="text-sm font-medium text-slate-800 dark:text-slate-200">{item.description}</p>
+										<p className="text-xs text-slate-400 dark:text-[#c9929b]">
+											{amount(item.unitPrice)} × {item.quantity}
+										</p>
+									</div>
+									<p className="text-sm font-bold text-slate-900 dark:text-white ml-4">
+										{amount(lineTotal.toFixed(2))}
+									</p>
+								</div>
+							);
+						})}
+					</div>
+				</div>
+			)}
+
 			{/* Payment Card */}
 			<div className="p-4 rounded-xl bg-white dark:bg-surface-dark shadow-sm border border-slate-100 dark:border-white/5">
 				<h4 className="text-slate-400 dark:text-white/40 text-[11px] font-bold uppercase tracking-widest mb-4">

@@ -1,5 +1,5 @@
 import { drizzle } from "drizzle-orm/node-postgres";
-import { products, purchases, sales } from "./schema";
+import { products, purchases, saleItems, sales } from "./schema";
 
 function getDb() {
 	if (!process.env.DATABASE_URL) {
@@ -7,7 +7,7 @@ function getDb() {
 	}
 
 	return drizzle(process.env.DATABASE_URL, {
-		schema: { sales, purchases, products },
+		schema: { sales, saleItems, purchases, products },
 		logger: process.env.NODE_ENV !== "production",
 	});
 }
@@ -22,4 +22,4 @@ export const db = new Proxy({} as ReturnType<typeof getDb>, {
 	},
 });
 
-export { products, purchases, sales };
+export { products, purchases, saleItems, sales };

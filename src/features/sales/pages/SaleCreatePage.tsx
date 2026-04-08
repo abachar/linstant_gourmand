@@ -20,6 +20,7 @@ export const SaleCreatePage = () => {
 		depositPaymentMethod: "Bancaire",
 		remaining: "",
 		remainingPaymentMethod: "Espèces",
+		items: [{ key: "0", description: "", unitPrice: "", quantity: "1" }],
 	};
 
 	async function handleSubmit(values: SaleFormValues) {
@@ -29,6 +30,13 @@ export const SaleCreatePage = () => {
 				...values,
 				deliveryAddress: values.deliveryAddress || undefined,
 				description: values.description || undefined,
+				items: values.items
+					.filter((item) => item.description && item.unitPrice)
+					.map((item) => ({
+						description: item.description,
+						unitPrice: item.unitPrice,
+						quantity: Number.parseInt(item.quantity, 10) || 1,
+					})),
 			});
 			router.push(`/sales/${result.id}`);
 		} finally {

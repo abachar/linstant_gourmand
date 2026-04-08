@@ -1,4 +1,4 @@
-import { db, sales } from "@common/db";
+import { db, saleItems, sales } from "@common/db";
 import { endOfDay, startOfDay } from "date-fns";
 import { asc, between, desc, eq } from "drizzle-orm";
 
@@ -22,8 +22,16 @@ export async function findSalesByRange(from: Date, end: Date) {
 
 export async function findSaleById(id: string) {
 	const [sale] = await db.select().from(sales).where(eq(sales.id, id)).limit(1);
-	return sale;
+	if (!sale) return sale;
+	const items = await db.select().from(saleItems).where(eq(saleItems.saleId, id)).orderBy(asc(saleItems.sortOrder));
+	return { ...sale, items };
 }
+
+type SaleItemData = {
+	description: string;
+	unitPrice: string;
+	quantity: number;
+};
 
 type SaleData = {
 	clientName: string;
@@ -35,43 +43,76 @@ type SaleData = {
 	depositPaymentMethod: string;
 	remaining: string;
 	remainingPaymentMethod: string;
+	items?: SaleItemData[];
 };
 
 export async function createSale(data: SaleData) {
-	const [result] = await db
-		.insert(sales)
-		.values({
-			clientName: data.clientName,
-			deliveryDatetime: new Date(data.deliveryDatetime),
-			deliveryAddress: data.deliveryAddress ?? null,
-			description: data.description ?? null,
-			amount: data.amount,
-			deposit: data.deposit,
-			depositPaymentMethod: data.depositPaymentMethod,
-			remaining: data.remaining,
-			remainingPaymentMethod: data.remainingPaymentMethod,
-		})
-		.returning({ id: sales.id });
-	return { id: result.id };
+	return await db.transaction(async (tx) => {
+		const [result] = await tx
+			.insert(sales)
+			.values({
+				clientName: data.clientName,
+				deliveryDatetime: new Date(data.deliveryDatetime),
+				deliveryAddress: data.deliveryAddress ?? null,
+				description: data.description ?? null,
+				amount: data.amount,
+				deposit: data.deposit,
+				depositPaymentMethod: data.depositPaymentMethod,
+				remaining: data.remaining,
+				remainingPaymentMethod: data.remainingPaymentMethod,
+			})
+			.returning({ id: sales.id });
+
+		if (data.items?.length) {
+			await tx.insert(saleItems).values(
+				data.items.map((item, i) => ({
+					saleId: result.id,
+					description: item.description,
+					unitPrice: item.unitPrice,
+					quantity: item.quantity,
+					sortOrder: i,
+				})),
+			);
+		}
+
+		return { id: result.id };
+	});
 }
 
 export async function deleteSaleById(id: string) {
+	// saleItems has onDelete: cascade, so items are auto-deleted
 	await db.delete(sales).where(eq(sales.id, id));
 }
 
 export async function updateSale(data: SaleData & { id: string }) {
-	await db
-		.update(sales)
-		.set({
-			clientName: data.clientName,
-			deliveryDatetime: new Date(data.deliveryDatetime),
-			deliveryAddress: data.deliveryAddress ?? null,
-			description: data.description ?? null,
-			amount: data.amount,
-			deposit: data.deposit,
-			depositPaymentMethod: data.depositPaymentMethod,
-			remaining: data.remaining,
-			remainingPaymentMethod: data.remainingPaymentMethod,
-		})
-		.where(eq(sales.id, data.id));
+	await db.transaction(async (tx) => {
+		await tx
+			.update(sales)
+			.set({
+				clientName: data.clientName,
+				deliveryDatetime: new Date(data.deliveryDatetime),
+				deliveryAddress: data.deliveryAddress ?? null,
+				description: data.description ?? null,
+				amount: data.amount,
+				deposit: data.deposit,
+				depositPaymentMethod: data.depositPaymentMethod,
+				remaining: data.remaining,
+				remainingPaymentMethod: data.remainingPaymentMethod,
+			})
+			.where(eq(sales.id, data.id));
+
+		// Replace all items
+		await tx.delete(saleItems).where(eq(saleItems.saleId, data.id));
+		if (data.items?.length) {
+			await tx.insert(saleItems).values(
+				data.items.map((item, i) => ({
+					saleId: data.id,
+					description: item.description,
+					unitPrice: item.unitPrice,
+					quantity: item.quantity,
+					sortOrder: i,
+				})),
+			);
+		}
+	});
 }
